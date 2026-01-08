@@ -1,0 +1,338 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Modal styles for Add Alumni */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 2000; }
+        .modal-overlay.open { display: flex; }
+        .modal-content { background: var(--white); padding: 1.25rem; border-radius: 10px; max-width: 640px; width: 94%; box-shadow: var(--shadow); position: relative; }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: .75rem; }
+        .modal-close { background: transparent; border: none; font-size: 1.25rem; cursor: pointer; }
+        .modal-footer { display:flex; gap:.5rem; justify-content:flex-end; margin-top: .75rem; }
+        .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+        @media (max-width:700px) { .form-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="dashboard-header">
+            <div class="logo">
+                <i class="fas fa-university"></i>
+                <h1>Admin Dashboard</h1>
+            </div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <span id="admin-name">Admin User</span>
+                    <span class="role-badge admin-badge">Administrator</span>
+                </div>
+                <button type="button" id="admin-logout-btn" class="btn btn-outline">Logout</button>
+            </div>
+        </header>
+        
+        <div class="dashboard-container">
+            <nav class="sidebar">
+                <ul class="nav-menu">
+                    <li class="nav-item active">
+                        <a href="#overview"><i class="fas fa-chart-bar"></i> Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#alumni"><i class="fas fa-user-graduate"></i> All Alumni</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#analytics"><i class="fas fa-chart-pie"></i> Analytics</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#manage"><i class="fas fa-cogs"></i> Management</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="admin-settings.html"><i class="fas fa-user-cog"></i> Admin Settings</a>
+                    </li>
+                </ul>
+                
+                <div class="stats-card">
+                    <h3>Quick Stats</h3>
+                    <div class="stat">
+                        <span class="stat-label">Total Alumni</span>
+                        <span class="stat-value" id="admin-total-alumni">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Departments</span>
+                        <span class="stat-value" id="admin-total-depts">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Mentors</span>
+                        <span class="stat-value" id="admin-total-mentors">0</span>
+                    </div>
+                </div>
+            </nav>
+            
+            <main class="dashboard-main">
+                <div class="dashboard-section active" id="overview-section">
+                    <div class="section-header">
+                        <h2>System Overview</h2>
+                        <button type="button" class="btn btn-primary" id="refresh-data-btn">
+                            <i class="fas fa-sync-alt"></i> Refresh Data
+                        </button> 
+                    </div>
+                    
+                    <div class="overview-cards">
+                        <div class="overview-card">
+                            <div class="overview-icon dept-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="overview-content">
+                                <h3>Departments</h3>
+                                <div class="dept-list" id="dept-list">
+                                    <!-- Department list will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="overview-card">
+                            <div class="overview-icon year-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="overview-content">
+                                <h3>Graduation Years</h3>
+                                <div class="year-chart" id="year-chart">
+                                    <!-- Year chart will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-section" id="alumni-section">
+                    <div class="section-header">
+                        <h2>All Alumni</h2>
+                        <div class="controls">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="admin-search" placeholder="Search by name, company, or skills">
+                            </div>
+                            <select id="dept-filter" class="filter-select">
+                                <option value="">All Departments</option>
+                                <!-- Department options will be populated by JavaScript -->
+                            </select>
+                            <select id="year-filter" class="filter-select">
+                                <option value="">All Years</option>
+                                <!-- Year options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                    <th>Graduation Year</th>
+                                    <th>Company</th>
+                                    <th>Position</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alumni-table-body">
+                                <!-- Table rows will be populated by JavaScript -->
+                                <tr>
+                                    <td colspan="7" class="empty-table">Loading alumni data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-footer">
+                        <div class="pagination-info">
+                            Showing <span id="showing-count">0</span> of <span id="total-count">0</span> alumni
+                        </div>
+                        <div class="pagination-controls">
+                            <button id="prev-page" class="btn btn-outline" disabled>Previous</button>
+                            <span id="current-page">1</span> / <span id="total-pages">1</span>
+                            <button id="next-page" class="btn btn-outline" disabled>Next</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-section" id="analytics-section">
+                    <div class="section-header">
+                        <h2>Analytics</h2>
+                    </div>
+                    
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h3>Department Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="dept-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="analytics-card">
+                            <h3>Graduation Trends</h3>
+                            <div class="chart-container">
+                                <canvas id="year-trend-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="analytics-card">
+                            <h3>Top Companies</h3>
+                            <div class="companies-list" id="top-companies">
+                                <!-- Top companies will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="analytics-card">
+                            <h3>Skills Overview</h3>
+                            <div class="skills-cloud" id="skills-cloud">
+                                <!-- Skills cloud will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-section" id="manage-section">
+                    <div class="section-header">
+                        <h2>System Management</h2>
+                    </div>
+                    
+                    <div class="management-cards">
+                        <div class="management-card">
+                            <div class="management-icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <h3>Data Management</h3>
+                            <p>Export or backup alumni data</p>
+                            <div class="management-actions">
+                                <button type="button" class="btn btn-primary" id="export-all-btn">
+                                    <i class="fas fa-file-export"></i> Export All Data
+                                </button>
+                                <button type="button" class="btn btn-outline" id="backup-btn">
+                                    <i class="fas fa-save"></i> Create Backup
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="management-card">
+                            <div class="management-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <h3>Add Alumni</h3>
+                            <p>Manually add alumni records</p>
+                            <button type="button" class="btn btn-primary" id="add-alumni-btn">
+                                <i class="fas fa-plus"></i> Add New Alumni
+                            </button>
+                            <!-- Add Alumni Modal -->
+                            <div id="addAlumniModal" class="modal-overlay" aria-hidden="true">
+                                <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="addAlumniTitle">
+                                    <div class="modal-header">
+                                        <h3 id="addAlumniTitle">Add New Alumni</h3>
+                                        <button type="button" class="modal-close" id="addAlumniClose" aria-label="Close">&times;</button>
+                                    </div>
+                                    <form id="addAlumniForm">
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label for="addName">Full Name *</label>
+                                                <input type="text" id="addName" name="name" required placeholder="Full name">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="addEmail">Email *</label>
+                                                <input type="email" id="addEmail" name="email" required placeholder="Email address">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="addDept">Department *</label>
+                                                <select id="addDept" name="department" required>
+                                                    <option value="">Select department</option>
+                                                    <option value="CSE">CSE</option>
+                                                    <option value="ECE">ECE</option>
+                                                    <option value="EEE">EEE</option>
+                                                    <option value="Mechanical">Mechanical</option>
+                                                    <option value="Civil">Civil</option>
+                                                    <option value="MBA">MBA</option>
+                                                    <option value="Diploma">Diploma</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="addYear">Graduation Year *</label>
+                                                <input type="number" id="addYear" name="graduationYear" min="1970" max="2100" required placeholder="e.g., 2020">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="addCompany">Company</label>
+                                                <input type="text" id="addCompany" name="company" placeholder="Company name">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="addPosition">Position</label>
+                                                <input type="text" id="addPosition" name="position" placeholder="Position">
+                                            </div>
+                                            <div class="form-group" style="grid-column:1 / -1;">
+                                                <label for="addSkills">Skills (comma separated)</label>
+                                                <input type="text" id="addSkills" name="skills" placeholder="e.g., JavaScript, Python">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="addLinkedIn">LinkedIn</label>
+                                                <input type="url" id="addLinkedIn" name="linkedin" placeholder="https://linkedin.com/in/username">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="addMentorship">Mentorship Interest</label>
+                                                <div class="checkbox-group"><input type="checkbox" id="addMentorship" name="mentorship"> <label for="addMentorship">Yes</label></div>
+                                            </div>
+                                        </div>
+
+                                        <div id="addAlumniError" class="error-message" style="display:none; margin-top:.75rem;"></div>
+                                        <div id="addAlumniSuccess" class="success-message" style="display:none; margin-top:.75rem;"></div>
+
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-outline" id="addAlumniCancel">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Save Alumni</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>                        </div>
+                        
+                        <div class="management-card">
+                            <div class="management-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <h3>Notifications</h3>
+                            <p>Send announcements to alumni</p>
+                            <button type="button" class="btn btn-primary" id="send-notification-btn">
+                                <i class="fas fa-paper-plane"></i> Send Notification
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="danger-zone">
+                        <h3>Danger Zone</h3>
+                        <p>These actions are irreversible. Use with caution.</p>
+                        <div class="danger-actions">
+                            <button type="button" class="btn btn-danger" id="clear-data-btn">
+                                <i class="fas fa-trash"></i> Clear All Data
+                            </button>
+                            <button type="button" class="btn btn-danger" id="reset-system-btn">
+                                <i class="fas fa-redo"></i> Reset System
+                            </button> 
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <footer>
+            <p>Alumni Management System &copy; <span id="current-year"></span></p>
+        </footer>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="admin.js"></script>
+    <script>
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

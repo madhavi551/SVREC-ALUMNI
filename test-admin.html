@@ -1,0 +1,120 @@
+<!-- test-admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Creation Test - Alumni Management System</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 2rem; }
+    .card { background: #fff; padding: 1rem 1.25rem; border-radius: 8px; box-shadow: var(--shadow); max-width: 900px; margin: 0 auto; }
+    .controls { display:flex; gap: .75rem; margin-bottom:1rem; flex-wrap:wrap }
+    pre { background:#f7f9fb; padding:1rem; border-radius:6px; overflow:auto }
+    .ok { color: green; font-weight:600 }
+    .fail { color: #c0392b; font-weight:600 }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>One-time Admin Creation Test</h2>
+    <p>This page runs tests to verify the <code>ensureSingleAdmin()</code> workflow in <code>js/auth.js</code>.</p>
+
+    <div class="controls">
+      <button id="wipe" class="btn btn-outline" type="button">Wipe users & currentUser</button>
+      <button id="run" class="btn btn-primary" type="button">Run Test</button>
+      <button id="override" class="btn btn-secondary" type="button">Set initialAdmin override</button>
+    </div>
+
+    <div id="output">
+      <h3>Results</h3>
+      <div id="results-area"></div>
+    </div>
+
+    <hr>
+    <h4>Notes</h4>
+    <ul>
+      <li>The test will <strong>wipe</strong> <code>alumniUsers</code> and <code>currentUser</code> in localStorage (for testing only).</li>
+      <li>Open your browser devtools console to see additional logs from <code>ensureSingleAdmin()</code>.</li>
+    </ul>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const wipeBtn = document.getElementById('wipe');
+    const runBtn = document.getElementById('run');
+    const overrideBtn = document.getElementById('override');
+    const resultsArea = document.getElementById('results-area');
+
+    function show(msg, cls) {
+      const el = document.createElement('div');
+      el.innerHTML = msg;
+      if (cls) el.className = cls;
+      resultsArea.appendChild(el);
+    }
+
+    wipeBtn.addEventListener('click', () => {
+      localStorage.removeItem('alumniUsers');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('initialAdmin');
+      resultsArea.innerHTML = '';
+      show('<span class="ok">Cleared localStorage keys: alumniUsers, currentUser, initialAdmin</span>');
+    });
+
+    overrideBtn.addEventListener('click', () => {
+      const sample = {
+        name: 'Admin User',
+        email: 'admin@alumni.edu',
+        password: 'putnew',
+        department: 'CSE',
+        graduationYear: 2010
+      };
+      localStorage.setItem('initialAdmin', JSON.stringify(sample));
+      resultsArea.innerHTML = '';
+      show('<span class="ok">Set <code>initialAdmin</code> override in localStorage.</span>');
+      show('<em>Now click <strong>Run Test</strong> to verify override is used.</em>');
+    });
+
+    runBtn.addEventListener('click', async () => {
+      resultsArea.innerHTML = '';
+
+      // Ensure initial clean state
+      localStorage.removeItem('alumniUsers');
+      localStorage.removeItem('currentUser');
+
+      show('<strong>Step 1:</strong> Wiped users and currentUser.');
+
+      // Call ensureSingleAdmin (should create admin)
+      if (typeof ensureSingleAdmin !== 'function') {
+        show('<span class="fail">ensureSingleAdmin() not found: make sure js/auth.js is loaded and contains the function.</span>');
+        return;
+      }
+
+      await ensureSingleAdmin();
+      let users = JSON.parse(localStorage.getItem('alumniUsers') || '[]');
+      show('<strong>After first ensureSingleAdmin()</strong> — total users: ' + users.length);
+      const admins = users.filter(u => u.role === 'admin');
+      show('Admin count: ' + admins.length + ' (should be 1)');
+      if (admins.length === 1) show('<span class="ok">PASS: One admin created: ' + admins[0].email + '</span>');
+      else show('<span class="fail">FAIL: Admin creation mismatch</span>');
+
+      // Call ensureSingleAdmin again
+      await ensureSingleAdmin();
+      users = JSON.parse(localStorage.getItem('alumniUsers') || '[]');
+      const admins2 = users.filter(u => u.role === 'admin');
+      show('<strong>After second ensureSingleAdmin()</strong> — total users: ' + users.length);
+      show('Admin count: ' + admins2.length + ' (should remain 1)');
+      if (admins2.length === 1) show('<span class="ok">PASS: No duplicate admin created on second call.</span>');
+      else show('<span class="fail">FAIL: Duplicate admin created.</span>');
+
+      // Display admin object (safe fields)
+      if (admins2[0]) {
+        const safe = { id: admins2[0].id, name: admins2[0].name, email: admins2[0].email, department: admins2[0].department };
+        show('<pre>' + JSON.stringify(safe, null, 2) + '</pre>');
+      }
+
+      show('<em>Test complete.</em>');
+    });
+  </script>
+</body>
+</html>
